@@ -9,7 +9,7 @@
 
 from __future__ import print_function
 
-import os
+import os, os.path
 import sys
 from xmp import Xmp
 
@@ -33,10 +33,28 @@ class Dotkeep(Xmp):
                 have_dir = True
             if e.name == '.keep':
                 have_dotkeep = True
-        print(have_dir, have_dotkeep)
         if not have_dir and not have_dotkeep:
             yield fuse.Direntry(".keep")
 
+    def access(self, path, mode):
+        if os.path.basename(path) == ".keep":
+            return
+        return super().access(path, mode)
+
+    def getattr(self, path):
+        if os.path.basename(path) == ".keep":
+            return os.lstat("/dev/null")
+        return super().getattr(path)
+
+    class DKFile(Xmp.XmpFile):
+        def __init__(self, path, flags, *mode):
+            if os.path.basename(path) == ".keep":
+                return self._subinit("/dev/null", flags, *mode)
+            super().__init__(path, flags, *mode)
+
+    def main(self, *a, **kw):
+        self.file_class = self.DKFile
+        return Fuse.main(self, *a, **kw)
 
 def main():
 
@@ -45,7 +63,7 @@ Add .keep files as necessary to make directories efficiently on some cloud-based
 
 """ + Fuse.fusage
 
-    server = Xmp(version="%prog " + fuse.__version__,
+    server = Dotkeep(version="%prog " + fuse.__version__,
                  usage=usage,
                  dash_s_do='setsingle')
 

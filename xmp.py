@@ -45,24 +45,8 @@ def flag2mode(flags):
 class Xmp(Fuse):
 
     def __init__(self, *args, **kw):
-
         Fuse.__init__(self, *args, **kw)
-
-        # do stuff to set up your filesystem here, if you want
-        #import thread
-        #thread.start_new_thread(self.mythread, ())
         self.root = '/'
-
-#    def mythread(self):
-#
-#        """
-#        The beauty of the FUSE python implementation is that with the python interp
-#        running in foreground, you can have threads
-#        """
-#        print "mythread: started"
-#        while 1:
-#            time.sleep(120)
-#            print "mythread: ticking"
 
     def getattr(self, path):
         return os.lstat("." + path)
@@ -109,36 +93,9 @@ class Xmp(Fuse):
     def utime(self, path, times):
         os.utime("." + path, times)
 
-#    The following utimens method would do the same as the above utime method.
-#    We can't make it better though as the Python stdlib doesn't know of
-#    subsecond preciseness in acces/modify times.
-#  
-#    def utimens(self, path, ts_acc, ts_mod):
-#      os.utime("." + path, (ts_acc.tv_sec, ts_mod.tv_sec))
-
     def access(self, path, mode):
         if not os.access("." + path, mode):
             return -EACCES
-
-#    This is how we could add stub extended attribute handlers...
-#    (We can't have ones which aptly delegate requests to the underlying fs
-#    because Python lacks a standard xattr interface.)
-#
-#    def getxattr(self, path, name, size):
-#        val = name.swapcase() + '@' + path
-#        if size == 0:
-#            # We are asked for size of the value.
-#            return len(val)
-#        return val
-#
-#    def listxattr(self, path, size):
-#        # We use the "user" namespace to please XFS utils
-#        aa = ["user." + a for a in ("foo", "bar")]
-#        if size == 0:
-#            # We are asked for size of the attr list, ie. joint size of attrs
-#            # plus null separators.
-#            return len("".join(aa)) + len(aa)
-#        return aa
 
     def statfs(self):
         """
@@ -167,7 +124,10 @@ class Xmp(Fuse):
     class XmpFile(object):
 
         def __init__(self, path, flags, *mode):
-            self.file = os.fdopen(os.open("." + path, flags, *mode),
+            self._subinit("." + path, flags, *mode)
+
+        def _subinit(self, path, flags, *mode):
+            self.file = os.fdopen(os.open(path, flags, *mode),
                                   flag2mode(flags))
             self.fd = self.file.fileno()
             if hasattr(os, 'pread'):
