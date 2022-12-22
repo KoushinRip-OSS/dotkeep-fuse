@@ -6,6 +6,8 @@ You can create all the necessary directories first on singlular drive remote, an
 
 ## How to use
 ```bash
+pip install fuse-python
+
 git clone https://github.com/KoushinRip-OSS/dotkeep-fuse
 cd dotkeep-fuse
 python3 dotkeep.py -o root=<path to source in full path> -o ro <mountpoint>
